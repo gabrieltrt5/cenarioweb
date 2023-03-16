@@ -1,0 +1,55 @@
+import urllib3
+import json
+from pyzabbix import ZabbixAPI
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+zapi= ZabbixAPI("https://zabbix-infra.trt5.jus.br/")
+zapi.session.verify=False
+zapi.login("Admin", "zabbix")
+
+
+'''host = zapi.host.create (
+{
+        "host": "servidor web",
+        "interfaces": [
+            {
+                "type": 1,
+                "main": 1,
+                "useip": 1,
+                "ip": "192.168.0.1",
+                "dns": "",
+                "port": "10050"
+            }
+        ],
+        "groups": [
+            {
+                "groupid": "15"
+            }]
+}
+)
+print (host)'''
+
+
+(
+{
+    "jsonrpc": "2.0",
+    "method": "httptest.create",
+    "params": {
+        "name": "Homepage check",
+        "hostid": "10559",
+        "steps": [
+            {
+                "name": "Homepage",
+                "url": "http://facebook.com",
+                "status_codes": "200",
+                "no": 1
+            },
+            {
+                "name": "Homepage / About",
+                "url": "http://facebook.com/help",
+                "status_codes": "200",
+                "no": 2
+            }
+        ]
+    },
+}
+)
