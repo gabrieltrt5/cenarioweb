@@ -1,0 +1,30 @@
+urls= open("urls.txt","r")
+linhas= urls.readlines()
+for linha in linhas:
+        (
+    {
+        "jsonrpc": "2.0",
+        "method": "httptest.create",
+        "params": {
+            "name": "youtube",
+            "hostid": "10559",
+            "agent": "Zabbix",
+            "authentication":"0",
+            "url":"https://www.youtube.com/",
+            "status_codes":"200",
+            "timeout":"15s",
+            "steps": [
+                {
+                    "name": "Homepage",
+                    "url": "https://www.youtube.com/",
+                    "status_codes": "200",
+                    "no": 1
+                }
+            ]
+        },
+    }
+    )
+urls.close()
+
+
+   
