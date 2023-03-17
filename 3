@@ -1,0 +1,37 @@
+import urllib3
+import json
+from pyzabbix import ZabbixAPI
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+zapi= ZabbixAPI("https://zabbix-infra.trt5.jus.br/")
+zapi.session.verify=False
+zapi.login("Admin", "zabbix")
+
+urls= open("urls.txt","r")
+linhas= urls.readlines()
+
+for linha in linhas:
+        (
+    {
+        "jsonrpc": "2.0",
+        "method": "httptest.create",
+        "params": {
+            "name": "youtube",
+            "hostid": "10559",
+            "agent": "Zabbix",
+            "authentication":"0",
+            "url":linha,
+            "status_codes":"200",
+            "timeout":"15s",
+            "steps": [
+                {
+                    "name": "Homepage",
+                    "url": linha,
+                    "status_codes": "200",
+                    "no": 1
+                }
+            ]
+        },
+    }
+    )
+urls.close()
+
