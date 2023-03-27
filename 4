@@ -1,0 +1,66 @@
+import json
+import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from pyzabbix import ZabbixAPI
+zapi= ZabbixAPI("https://zabbix-infra.trt5.jus.br/")
+zapi.session.verify=False
+zapi.login("Admin", "zabbix")
+
+zabbix_url = "https://zabbix-infra.trt5.jus.br/"
+zabbix_user = "Admin"
+zabbix_senha = "zabbix"
+cenario = "cenario"
+host_id = "10560"
+with open("urls.txt", "r") as urls_file:
+    urls = urls_file.readlines()
+
+
+
+
+
+def cria_cenarios_web(zabbix_url, zabbix_user, zabbix_senha, cenario, host_id, urls):
+    try:
+        zapi = ZabbixAPI(zabbix_url)
+        zapi.session.verify=False
+        zapi.login(zabbix_user, zabbix_senha)
+    except Exception as e:
+        print(f"Erro ao fazer login no Zabbix: {str(e)}")
+        return 0
+
+    cenarios_criados = 0
+    for url in urls:
+        try:
+            result = zapi.httptest.create({
+                "name": cenario,
+                "hostid": host_id,
+                "agent": "Zabbix",
+                "authentication": "0",
+                "url": url.strip(),
+                "status_codes": "200",
+                "timeout": "15s",
+                "steps": [
+                    {
+                        "name": "Homepage",
+                        "url": url.strip(),
+                        "status_codes": "200",
+                        "no": 1
+                    }
+                ]
+            })
+            if 'httptestids' in result:
+                print(f"Cenário web criado com sucesso para a URL {url}")
+                cenarios_criados += 1
+            else:
+                print(f"Erro ao criar cenário web para a URL {url}")
+        except Exception as e:
+            print(f"Erro ao criar cenário web para a URL {url}: {str(e)}")
+
+    return cenarios_criados
+
+
+
+with open("urls.txt", "r") as urls_file:
+    urls = urls_file.readlines()
+cenarios_criados = cria_cenarios_web(zabbix_url, zabbix_user, zabbix_senha, cenario, host_id, urls)
+print(f"Total de cenários criados: {cenarios_criados}")
