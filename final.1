@@ -1,0 +1,123 @@
+import json
+import csv
+import requests
+import urllib3
+import logging
+import os
+#logging.basicConfig(level="DEBUG")
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from pyzabbix import ZabbixAPI
+zapi= ZabbixAPI("https://zabbix-infra.trt5.jus.br/")
+zapi.session.verify=False
+zapi.login("Admin", "zabbix")
+'''with open("urls.csv", "r") as f:
+    for line in f:
+        values = line.strip().split(";")
+        url = values[0]
+        nome_host = values[1]'''
+zabbix_url = 'https://zabbix-infra.trt5.jus.br/'
+zabbix_user = "Admin"
+zabbix_senha = "zabbix"
+
+
+
+
+
+
+
+
+def checar_e_criar_host(nome_host):
+    host_checagem = zapi.host.get(filter={"host": nome_host})
+    hostid = -1
+    if host_checagem:
+        print("Já existe um host com o nome", nome_host)
+        hostid = host_checagem[0]['hostid']
+    else:
+        novo_host = zapi.host.create({
+            "host": nome_host,
+            "interfaces": [
+                {
+                    "type": 1,
+                    "main": 1,
+                    "useip": 1,
+                    "ip": "192.168.0.1",
+                    "dns": "",
+                    "port": "10050"
+                }
+            ],
+            "groups": [
+                {
+                    "groupid": "15"
+                }]
+        })
+        hostid = novo_host['hostids'][0]
+    return hostid
+
+
+
+
+
+
+def cria_cenarios_web(zabbix_url, zabbix_user, zabbix_senha, url, hostid, urls):
+    try:
+        zapi = ZabbixAPI(zabbix_url)
+        zapi.session.verify=False
+        zapi.login(zabbix_user, zabbix_senha)
+    except Exception as e:
+        print(f"Erro ao fazer login no Zabbix: {str(e)}")
+        return 0
+
+    cenarios_criados = 0
+
+    try:
+        # Checar se o cenário web já existe para a URL
+        existing_tests = zapi.httptest.get(filter={'hostid': hostid, 'name': f'cenario {url}'})
+        if existing_tests:
+            print(f"Já existe um cenário web para a URL {url}")
+            return 0
+
+        # Criar cenário web caso não exista
+        result = zapi.httptest.create({
+            "name": f'cenario {url}',
+            "hostid": hostid,
+            "agent": "Zabbix",
+            "authentication": "0",
+            "steps": [
+                {
+                    "name": "Homepage",
+                    "url": url,
+                    "status_codes": "200",
+                    "no": 1
+                }
+            ]
+        })
+        if 'httptestids' in result:
+            print(f"Cenário web criado com sucesso para a URL {url}")
+            cenarios_criados += 1
+        else:
+            print(f"Erro ao criar cenário web para a URL {url}")
+    except Exception as e:
+        print(f"Erro ao criar cenário web para a URL {url}: {str(e)}")
+
+    return cenarios_criados
+
+
+
+
+with open("urls.csv", "r") as f:
+    reader = csv.reader(f, delimiter=';')
+    for row in reader:
+        url = row[0]
+        nome_host = row[1]
+
+      
+      ##'''  print(values)
+     #   url = values[0]
+      #  print(url)
+       ## nome_host = values[1]
+      #  print(nome_host)
+
+        cenario = url
+        host_id = checar_e_criar_host(nome_host)
+        num_cenarios_web = cria_cenarios_web(zabbix_url, zabbix_user, zabbix_senha, cenario, host_id, url)
+
